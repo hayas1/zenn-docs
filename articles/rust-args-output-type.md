@@ -3,7 +3,7 @@ title: "Rust: Vec<T>のindexはTだけでなく[T]も返している"
 emoji: "🥬"
 type: "tech"
 topics: ["rust"]
-published: false
+published: true
 ---
 
 # 返り値の型
