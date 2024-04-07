@@ -1,0 +1,66 @@
+{
+    "name": "Debian",
+    "image": "mcr.microsoft.com/vscode/devcontainers/base:0-bullseye",
+    "postCreateCommand": "test -e ${containerWorkspaceFolder}/.devcontainer/entry.sh && zsh ${containerWorkspaceFolder}/.devcontainer/entry.sh",
+    "remoteUser": "vscode",
+    "mounts": [
+        // "source=${localEnv:HOME}/bin/,target=/home/vscode/bin/,type=bind",
+        "source=${localEnv:HOME}/.ssh/,target=/home/vscode/.ssh/,type=bind",
+        "source=${localEnv:HOME}/.zsh_history,target=/home/vscode/.zsh_history,type=bind",
+        "source=${localEnv:HOME}/.config/git/,target=/home/vscode/.config/git/,type=bind",
+        "source=${localEnv:HOME}/.config/gh/,target=/home/vscode/.config/gh/,type=bind",
+        "source=${localEnv:HOME}/.config/gcloud/,target=/home/vscode/.config/gcloud/,type=bind",
+        "source=${localEnv:HOME}/.aws/,target=/home/vscode/.aws/,type=bind",
+        "source=${localEnv:HOME}/.kube/,target=/home/vscode/.kube/,type=bind",
+        "source=${localEnv:HOME}/.helm/,target=/home/vscode/.helm/,type=bind",
+    ],
+    // "remoteEnv": {
+    //     "PATH": "${containerEnv:PATH}:/home/vscode/bin"
+    // },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // "mhutchie.git-graph",
+                // "GitHub.copilot",
+                "Codeium.codeium",
+                // "TabNine.tabnine-vscode",
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/docker-outside-of-docker": "latest",
+        // "ghcr.io/devcontainers/features/python": {
+        //     "version": "latest",
+        //     "httpProxy": "${localEnv:http_proxy}"
+        // },
+        "ghcr.io/devcontainers/features/go": "latest",
+        "ghcr.io/devcontainers/features/rust": "latest",
+        "ghcr.io/devcontainers/features/node": "latest",
+        // "ghcr.io/devcontainers/features/aws-cli": "latest",
+        // "ghcr.io/devcontainers/features/kubectl-helm-minikube": "latest",
+        "ghcr.io/devcontainers/features/github-cli": "latest",
+        "ghcr.io/hayas1/devcontainer-features/zsh-dotfiles": {
+            "plugin-manager": "oh-my-zsh",
+            "theme": "powerlevel10k",
+            "with-plugins": true,
+            "with-tools": true,
+            "with-aliases": true
+        },
+        "ghcr.io/hayas1/devcontainer-features/powerlevel10k": {
+            "plugin-manager": "oh-my-zsh"
+        },
+        // "ghcr.io/hayas1/devcontainer-features/starship": {},
+        // "ghcr.io/hayas1/devcontainer-features/sheldon": {},
+        "ghcr.io/hayas1/devcontainer-features/gcloud-cli": {
+            "with-kubectl": "latest",
+            "with-helm": "latest",
+            "completion": "zsh"
+        },
+        "ghcr.io/hayas1/devcontainer-features/pyenv": {
+            "with": "latest" // install python also
+        },
+        "ghcr.io/hayas1/devcontainer-features/tfenv": {
+            "with": "latest" // install terraform also
+        },
+    }
+}
