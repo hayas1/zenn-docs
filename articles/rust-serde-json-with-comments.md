@@ -134,8 +134,8 @@ assert_eq!(serde_json::to_value(jsonc.clone()).unwrap(), json);
 ```
 
 
-# やったこと
-それぞれまた別でフォーカスを当てて別の記事に起こしてみようかとも思っていますが、↓のようなことをやっています。
+# 実装について
+細かいことなので、わざわざ書いても、という気もしますが、せっかくなので書いてみます。
 
 ## serde の抽象化に従う
 ### Deserialize
@@ -214,12 +214,32 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/macros.rs#L15
 
 他にも `array!` macro や `object!` macro では trailing comma の処理が色々試してみてもうまくいかず、結局同じような処理を2回書きがちみたいな感じにもなっているので、ちょっと悔いが残る感じの実装になってます。
 
-## コードの共通化
-traitを使って、同じようなコードを書かないようにする工夫
 
-## CI で楽をする
-単体テスト、カバレッジ、ドキュメント生成、ドキュメントの追従漏れチェック、リリース作成
-GitHub Pages
+# CI について
+CIもいくつか作ってるので、これについても書いてみます。
+
+## 単体テスト、formatter のチェック、linterのチェック
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L28-L32
+`cargo test` とか `cargo fmt --check` とか `cargo clippy --tests -- --deny warnings` とかをやっているだけではあります。
+自動フォーマットとかは CI ではしておらず、CIがこけるみたいな感じになっています。 CI に勝手にコミットされるのがうれしくないと思ったためです。
+ローカルで自動フォーマットされるのでこけたことはないです
+
+## ドキュメント生成
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L31-L36
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L42-L54
+`master` ブランチの push (PR の merge も含む) をトリガーに `cargo doc --no-deps` して、 GitHub Pages に上げています。
+[actions/upload-pages-artifact](https://github.com/actions/upload-pages-artifact) を使って生成されたdocを artifact に上げ、[actions/deploy-pages](https://github.com/actions/deploy-pages) を使って GitHub Pages に反映するという、最近のスタンダードなやり方をしています。
+`cargo doc` とかをしていると .lock みたいなパーミッションが 600 のファイルが生成され、それがあるとうまく GitHub Pages に反映できずこけるため、ファイルを消すなどしないといけないというちょっとした落とし穴があります。
+https://github.com/orgs/community/discussions/40771#discussioncomment-8344735
+
+docについては [crates.io](https://crates.io/) に公開すると [docs.rs](https://docs.rs/) に上がるそうなので、そこまで必要ないことかもしれないですね
+
+## カバレッジ計測
+
+## READMEの追従漏れチェック
+
+## リリースドラフト作成
+
 
 
 # 感想
