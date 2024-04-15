@@ -175,7 +175,15 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/ser/access/map.rs#L
 Serialize は Deserialize よりシンプルではありますが、入れ子を処理するためのトレイトが、`SerializeSeq`, `SerializeTuple`, `SerializeTupleStruct`, `SerializeTupleVariant`, `SerializeMap`, `SerializeStruct`, `SerializeStructVariant` の 7 個ほどあったりするので、なんだかんだで Deserialize と同じくらいの量のコードを書くことになります。(`SerializeTuple` の処理は実質 `SerializeSeq` に投げれたりということもあって全部が全部実装を書いていかないといけないわけではない)
 
 ## `Value` の Serialize と Deserialize
-文字列 ↔ Rustの値 だけでなく、 `Value` ↔ Rustの値 についても Serialize と Deserialize で抽象化されるため、その実装もあります。
+文字列 ↔ Rustの値 だけでなく、 `Value` ↔ Rustの値 についても Serialize と Deserialize で抽象化されるため、その実装もあります。はじめに `Value` について書いておくと、これはその実 `Map` や `String` といったJSONの値を表す enum になっています。
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value.rs#L63-L100
+
+つまり、パーサーが「今読んでいる文字列」に応じて Rust の値へデシリアライズするのと同様に、`Value` の「今見ている値」に応じて Rust の値へデシリアライズできます。そして、Rust の値を JSON 文字列にシリアライズできるのと同様に、 Rust の値を `Value` 構造体へシリアライズできます。
+そのための実装が [value/de](https://github.com/hayas1/json-with-comments/tree/v0.1.5/src/value/de) や [value/ser](https://github.com/hayas1/json-with-comments/tree/v0.1.5/src/value/ser) に書いてあります
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/de/deserializer.rs#L59-L91
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/ser/serializer.rs#L29-L50
+
+今回作った `json-with-comments` の `Value` と `serde_json` の `Value` を相互変換する仕組みは、これに乗っかっています。
 
 ## macro の実装
 munch
