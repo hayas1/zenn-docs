@@ -59,8 +59,8 @@ assert!(matches!(
 ));
 ```
 
-## `Value` 構造体へのデシリアライズ
-JSONCをデシリアライズしたい型が決まってない時は `Value` 構造体を使うことができます。 `Value` 構造体は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 `jsonc!` マクロを使って `Value` を作ることもできます。このあたりも serde_json とだいたい同じですね。
+## `Value` へのデシリアライズ
+JSONCをデシリアライズしたい型が決まってない時は `Value` を使うことができます。 `Value` は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 `jsonc!` マクロを使って `Value` を作ることもできます。このあたりも serde_json とだいたい同じですね。
 ```rust
 use json_with_comments::{from_str, Value, jsonc};
 
@@ -115,8 +115,8 @@ let pretty = r#"{
 assert_eq!(json_with_comments::to_string_pretty(&person).unwrap(), pretty);
 ```
 
-## serde_json の `Value` 構造体との相互変換
-さらに、 `Value` 構造体を、 `Serialize` や `Deserialize` を実装している構造体へシリアライズしたりデシリアライズしたりすることもできます。実はこれも serde_json とだいたい同じです。今回はこれを使って、 `json_with_comments::Value` と `serde_json::Value` の相互変換を実現しています。
+## serde_json の `Value` との相互変換
+さらに、 `Value` を、 `Serialize` や `Deserialize` を実装している型へシリアライズしたりデシリアライズしたりすることもできます。実はこれも serde_json とだいたい同じです。今回はこれを使って、 `json_with_comments::Value` と `serde_json::Value` の相互変換を実現しています。
 ```rust
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -178,7 +178,7 @@ Serialize は Deserialize よりシンプルではありますが、入れ子を
 文字列 ↔ Rustの値 だけでなく、 `Value` ↔ Rustの値 についても Serialize と Deserialize で抽象化されるため、その実装もあります。はじめに `Value` について書いておくと、これはその実 `Map` や `String` といったJSONの値を表す enum になっています。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value.rs#L63-L100
 
-つまり、パーサーが「今読んでいる文字列」に応じて Rust の値へデシリアライズするのと同様に、`Value` の「今見ている値」に応じて Rust の値へデシリアライズできます。そして、Rust の値を JSON 文字列にシリアライズできるのと同様に、 Rust の値を `Value` 構造体へシリアライズできます。
+つまり、パーサーが「今読んでいる文字列」に応じて Rust の値へデシリアライズするのと同様に、`Value` の「今見ている値」に応じて Rust の値へデシリアライズできます。そして、Rust の値を JSON 文字列にシリアライズできるのと同様に、 Rust の値を `Value` へシリアライズできます。
 そのための実装が [value/de](https://github.com/hayas1/json-with-comments/tree/v0.1.5/src/value/de) や [value/ser](https://github.com/hayas1/json-with-comments/tree/v0.1.5/src/value/ser) に書いてあります
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/de/deserializer.rs#L59-L91
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/ser/serializer.rs#L29-L50
@@ -186,7 +186,33 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/ser/serialize
 今回作った `json-with-comments` の `Value` と `serde_json` の `Value` を相互変換する仕組みは、これに乗っかっています。
 
 ## macro の実装
-munch
+主にはデシリアライズしたい型が定まっていない場合などに使う `Value` の列挙型ですが、文字列をパースとかしなくても作りたいですよね。
+そのために、 `serde_json` では `Value` を簡単に作ることができる `json!` macro が用意されていて、今回作った `json-with-comments` でも同様に `Value` を簡単に作ることができる `jsonc!` macro を用意しています。↓みたいな感じでお手軽に使うことができます
+```rust
+let value = jsonc!({"key": "value", "null": null});
+```
+
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/macros.rs#L62-L81
+Rust の macro (ここでは[宣言的マクロ](https://doc.rust-jp.rs/book-ja/ch19-06-macros.html)のことです) は基本的に引数を解析して `block`, `expr`, `tt` などの[マッチする構造](https://doc.rust-lang.org/reference/macros-by-example.html#metavariables)に応じてコード生成して置き換える、といったことをします。`expr` は式のことで、`tt` はトークンツリーのことです。↑のコードだと、
+- `[` `]` で囲われていたら `array!` macro に処理を投げる
+- `{` `}` で囲われていたら `object!` macro に処理を投げる
+- null だったら `Value::Null` を返す
+- `expr` だったら `Value::from` を使って `Value` を生成する
+
+というイメージです。 `null` という文字列は Rust 的には式ではないので `expr` にはマッチしないといったミソがあります。
+
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/macros.rs#L151-L224
+`object!` macro が `array!` macro に比べて実装がちょっと大変だった話があるので、簡単に紹介します
+
+`object!` macro がやりたいことは、↓のようになります。
+- `key: value,` の形を見つけて、 `(key, value)` の tuple にする
+- `key: value,` の形がなくなるまで繰り返す
+- すると、 `[(key, value), ...]` のようなリストが作られるので、 `.into_iter().collect()` して `HashMap` にする
+
+このうち、`key: value` の形を見つける部分がちょっと大変で、`{$key:expr : $($rest:tt)*}` などでマッチしようとするとコンパイラに怒られてしまいます、 `expr` の区切りとして `:` は使えなくて、 `=>` が `,` か `;` だそうです。macro のマッチなどはなかなか仕様が大変そうです。
+こんなときにどうするかというと、前から順番に `tt` を一つずつ見て、 `:` が先頭に来るまで取り出していく、といったようなことをします(↑の macros.rs のコード片で言うと、 220 行目あたりです)。一回一回 `object!` macro を繰り返し呼ぶということなので、ちょっとパフォーマンスに懸念がありますね。まあコンパイル時に行われることなのでよいかなという気もします。ちなみに、こんな感じで macro で `tt` を1つ1つ取り出すことを、munch と呼ぶそうです。むしゃむしゃ食べるみたいな意味らしいです。
+
+他にも `array!` macro や `object!` macro では trailing comma の処理が色々試してみてもうまくいかず、結局同じような処理を2回書きがちみたいな感じにもなっているので、ちょっと悔いが残る感じの実装になってます。
 
 ## コードの共通化
 traitを使って、同じようなコードを書かないようにする工夫
