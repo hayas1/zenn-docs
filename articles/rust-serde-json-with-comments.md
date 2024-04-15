@@ -145,7 +145,7 @@ serde において Deserialize の登場人物は大きく 3 人です。
 - `Visitor` トレイト: パースされた値を実際にRustの値として対応させる人です。
   - 例えば `100` という JSON を `usize` にデシリアライズしたいとして、`usize`の変数に実際に値を代入する部分をやっているイメージです
 
-つまり、今回実装していくのは `Deserializer` トレイトが主軸になるということです。 `Deserializer` トレイトはかなりたくさんのメソッドを要求していて、たとえば `deserialize_any` や `deserialize_bool` があります。ちなみに、これらのメソッドが引数として `Visitor` をもらっている、いわゆる Visitor パターンになっています。`deserialize_bool` は今読んでいる文字列が `true` であれば `true` を、 `false` であれば `false` を、 `Visitor` に渡せばいいだけなので実装が比較的楽です。一方で `deserialize_any` などはそうもいかず、例えば今読んでいる文字列が `{` であれば Object(いわゆる Map) のパースが必要です。
+つまり、今回実装していくのは `Deserializer` トレイトが主軸になり、あとは serde がよしなにやってくれるということです。 `Deserializer` トレイトはかなりたくさんのメソッドを要求していて、たとえば `deserialize_any` や `deserialize_bool` があります。ちなみに、これらのメソッドが引数として `Visitor` をもらっている、いわゆる Visitor パターンになっています。`deserialize_bool` は今読んでいる文字列が `true` であれば `true` を、 `false` であれば `false` を、 `Visitor` に渡せばいいだけなので実装が比較的楽です。一方で `deserialize_any` などはそうもいかず、例えば今読んでいる文字列が `{` であれば Object(いわゆる Map) のパースが必要です。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/de/access/jsonc.rs#L58-L91
 
 ↑に載せた実装の  `deserialize_any` では今読んでいる文字列が `{` だったときは `Deserializer` トレイトで同じく要求されている `deserialize_map` メソッドを呼んでいます。 `deserialize_map` メソッドでは↓のように、 `{` の中身のパースを `MapDeserializer` 構造体に任せており、これは serde の `MapAccess` トレイトを実装したものになっています。
@@ -163,7 +163,7 @@ serde において Serialize は Visitor パターンではないので、登場
 - `Serializer` トレイト: 実際にシリアライズをやる人のことです。
   - `SerializeSeq` や `SerializeMap` などのトレイトに、入れ子部分のシリアライズを任せたりはしています。
 
-Serialize についても Deserialize と同じく、今回実装していくのは `Serializer` トレイトが主軸になります。このトレイトは、 `SerializeMap` などの入れ子をシリアライズする型を Associated Type でたくさん要求していて、`serialize_bool` や `serialize_map` などこちらもたくさんのメソッドを要求しています。 `Serializer` については特に Visitor パターンという感じでもなく、各メソッドがそれぞれ実際の値を渡されるので、それを文字列にしていく処理をゴソゴソと書いていく形です。
+Serialize についても Deserialize と同じく、今回実装していくのは `Serializer` トレイトが主軸になり、あとは serde がよしなにやってくれます。このトレイトは、 `SerializeMap` などの入れ子をシリアライズする型を Associated Type でたくさん要求していて、`serialize_bool` や `serialize_map` などこちらもたくさんのメソッドを要求しています。 `Serializer` については特に Visitor パターンという感じでもなく、各メソッドがそれぞれ実際の値を渡されるので、それを文字列にしていく処理をゴソゴソと書いていく形です。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/ser/access/jsonc.rs#L25-L54
 
 `serialize_map` などのメソッドでは、処理を `SerializeMap` に投げています。
