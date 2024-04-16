@@ -232,9 +232,18 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/maste
 `cargo doc` とかをしていると .lock みたいなパーミッションが 600 のファイルが生成され、それがあるとうまく GitHub Pages に反映できずこけるため、ファイルを消すなどしないといけないというちょっとした落とし穴があります。
 https://github.com/orgs/community/discussions/40771#discussioncomment-8344735
 
+↓のURLにドキュメントをアップロードしています
+https://hayas1.github.io/json-with-comments/json_with_comments/
+
 docについては [crates.io](https://crates.io/) に公開すると [docs.rs](https://docs.rs/) に上がるそうなので、そこまで必要ないことかもしれないですね
 
 ## カバレッジ計測
+test のカバレッジに計測には [cargo-tarpaulin](https://crates.io/crates/cargo-tarpaulin) を使ってます。
+`cargo tarpaulin --output-dir target/doc --manifest-path Cargo.toml --out Html` をして doc 配下にカバレッジに関しての HTML が置かれるので、ドキュメントと同様に GitHub Pages に上げています。
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L27-L30
+
+↓のURLにカバレッジについてアップロードされてます。あたらめて見ると 68.75% となかなか低かったですね
+https://hayas1.github.io/json-with-comments/tarpaulin-report
 
 ## READMEの追従漏れチェック
 
