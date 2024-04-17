@@ -27,7 +27,7 @@ json-with-comments = { git = "https://github.com/hayas1/json-with-comments", tag
 ## `Deserialize` を実装している型へのデシリアライズ
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md#parse-jsonc-as-typed-struct
 
-JSONC からのデシリアライズはこんな感じで `from_str` 関数を使います。コメントがついていたり trailing comma があったりしてもパースできる以外はだいたい serde_json と同じですね
+JSONC からのデシリアライズは `from_str` 関数を使います。コメントがついていたり trailing comma があったりしてもパースできる以外はだいたい serde_json と同じですね
 ```rust
 use serde::Deserialize;
 #[derive(Deserialize)]
@@ -135,7 +135,7 @@ assert_eq!(serde_json::to_value(jsonc.clone()).unwrap(), json);
 
 
 # 実装について
-実装は serde_json とかなり近く、serde や serde_json のおさらいみたいな感じにもなりますが、せっかくなので書いていきます。
+実装は serde_json とかなり近く、serde や serde_json のおさらいみたいにもなりますが、せっかくなので書いていきます。
 
 ## serde の抽象化に従う
 ### Deserialize
@@ -223,9 +223,9 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/macros.rs#L15
 
 このうち、`key: value` の形を見つける部分がちょっと大変でした。`{$key:expr : $($rest:tt)*}` などで簡単にマッチできそうにも見えますが、これはコンパイラに怒られてしまいます。 `expr` の区切りとして `:` は使えなくて、 `=>` が `,` か `;` だそうです。macro のマッチなどはなかなか仕様が大変そうです。
 こんなときにどうするかというと、前から順番に `tt` を一つずつ見て、 `:` が先頭に来るまで取り出していく、といったようなことをします(↑の macros.rs のコード片で言うと、 220 行目あたりです)。先頭に `:` が来ると、他のパターンにマッチして value を取り出す処理が始まります。`:` が来るまで一回一回 `object!` macro を繰り返し呼ぶということなので、ちょっとパフォーマンスに懸念がありますね。まあコンパイル時に行われることなのでよいかなという気もします。
-ちなみに、こんな感じで macro で `tt` を1つ1つ取り出すことを、munch と呼ぶそうです。むしゃむしゃ食べるみたいな意味らしいです。
+ちなみに、こんな感じで macro で `tt` を1つ1つ取り出すことを、munch と呼ぶそうです。むしゃむしゃ食べるといった意味らしいです。
 
-他にも `array!` macro や `object!` macro では trailing comma の処理が色々試してみてもうまくいかず、結局同じような処理を2回書きがちみたいな感じにもなっているので、ちょっと悔いが残る感じの実装になってます。
+他にも `array!` macro や `object!` macro では trailing comma の処理が色々試してみてもうまくいかず、結局同じような処理を2回書きがちにもなっているので、ちょっと悔いが残る実装になってます。
 
 
 # CI について
@@ -234,7 +234,7 @@ CIもいくつか作ってるので、これについても書いてみます。
 ## 単体テスト、formatter のチェック、linterのチェック
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L28-L32
 `cargo test` とか `cargo fmt --check` とか `cargo clippy` とかをやっているだけではあります。
-自動フォーマットとかは CI ではしておらず、CIがこけるみたいな感じになっています。 CI に勝手にコミットされるのがうれしくないと思ったためです。
+自動フォーマットとかは CI ではしておらず、CIがこけるようになっています。 CI に勝手にコミットされるのがうれしくないと思ったためです。
 ローカルで自動フォーマットされるのでこけたことはないです
 
 ## ドキュメント生成
@@ -301,7 +301,7 @@ https://docs.github.com/ja/repositories/releasing-projects-on-github/automatical
 release-drafter も機能が豊富でいいですが、今回は公式のものを使うことにしました。公式のものについて機能を簡単に説明すると、↓のような `.github/release.yml` を書いておくと、 PR のタイトルやラベルをもとにリリースノートを自動生成できるようになります。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/release.yml#L1-L23
 
-リリース作成時に 「Generate Release Notes」ボタンを押すと、自動生成されたリリースノートを埋めてもらえるという感じです。
+リリース作成時に 「Generate Release Notes」ボタンを押すと、自動生成されたリリースノートを埋めてもらえます。
 「Generate Release Notes」ボタンの画像は↓の公式ドキュメントの中にこっそり写ってます
 https://docs.github.com/ja/repositories/releasing-projects-on-github/automatically-generated-release-notes#creating-automatically-generated-release-notes-for-a-new-release
 いくつかリリースをしていますが、リリースノートはこうやって自動作成されています。
