@@ -27,7 +27,7 @@ json-with-comments = { git = "https://github.com/hayas1/json-with-comments", tag
 ## `Deserialize` を実装している型へのデシリアライズ
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md#parse-jsonc-as-typed-struct
 
-JSONC からのデシリアライズはこんな感じです。コメントがついていたり trailing comma があったりしてもパースできる以外はだいたい serde_json と同じですね
+JSONC からのデシリアライズはこんな感じで `from_str` 関数を使います。コメントがついていたり trailing comma があったりしてもパースできる以外はだいたい serde_json と同じですね
 ```rust
 use serde::Deserialize;
 #[derive(Deserialize)]
@@ -60,7 +60,7 @@ assert!(matches!(
 ```
 
 ## `Value` へのデシリアライズ
-JSONC をデシリアライズしたい型が決まってない時は `Value` を使うことができます。 `Value` は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 `jsonc!` マクロを使って `Value` を作ることもできます。このあたりも serde_json とだいたい同じです
+JSONC をデシリアライズしたい型が決まってない時は `Value` の型を使うことができます。 `Value` は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 `jsonc!` マクロを使って `Value` を作ることもできます。このあたりも serde_json とだいたい同じです
 ```rust
 use json_with_comments::{from_str, Value, jsonc};
 
@@ -80,7 +80,7 @@ assert_eq!(data, jsonc!({ "name": "John Doe", "address": { "street": "Main", "nu
 ```
 
 ## `Serialize` を実装している型からのシリアライズ
-データを JSONC へシリアライズすることもできます。minify な JSONC (つまり JSON と同じ) と、pretty な JSONC (trailing comma がある)を生成できます。これも serde_json とだいたい同じですね
+データを JSONC へシリアライズすることもできます。minify な JSONC (つまり JSON と同じ)にする `to_string` 関数と、pretty な JSONC (trailing comma がある)にする `to_string_pretty` 関数の2つがあります。これも serde_json とだいたい同じですね
 ```rust
 use serde::Serialize;
 #[derive(Serialize)]
@@ -116,7 +116,7 @@ assert_eq!(json_with_comments::to_string_pretty(&person).unwrap(), pretty);
 ```
 
 ## serde_json の `Value` との相互変換
-さらに、 `Value` を、 `Serialize` や `Deserialize` を実装している型へシリアライズしたりデシリアライズしたりすることもできます。実はこれも serde_json とだいたい同じです。今回はこれを使って、 `json_with_comments::Value` と `serde_json::Value` の相互変換を実現しています。
+さらに、`to_value` や `from_value` などの関数を使って、 `Value` を `Serialize` を実装している型からシリアライズしたり、 `Deserialize` を実装している型へデシリアライズしたりすることもできます。実はこれも serde_json とだいたい同じです。今回はこれを使って、 `json_with_comments::Value` と `serde_json::Value` の相互変換を実現しています。詳しくは下でも触れます。
 ```rust
 use serde::{Deserialize, Serialize};
 use serde_json::json;
