@@ -242,7 +242,7 @@ test のカバレッジに計測には [cargo-tarpaulin](https://crates.io/crate
 `cargo tarpaulin --output-dir target/doc --manifest-path Cargo.toml --out Html` をして doc 配下にカバレッジに関しての HTML が置かれるので、ドキュメントと同様に GitHub Pages に上げています。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L27-L30
 
-↓のURLにカバレッジについてアップロードされてます。あたらめて見ると 68.75% となかなか低かったですね
+↓のURLにカバレッジについてアップロードされてます。あたらめて見ると 68.75% となかなか低かったですね 😰
 https://hayas1.github.io/json-with-comments/tarpaulin-report
 
 ## READMEの追従漏れチェック
@@ -254,8 +254,35 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullr
 
 `README.md` の更新が漏れていると CI がこけて気づくことができるので、個人的にはよい落としどころだったかなと思っています。
 
-## リリースドラフト作成
+## タグの付与
+Rust のプログラムを Git 管理すると、`Cargo.toml` に書いているバージョンと、Git でつけるタグのバージョンで、2つのバージョンを管理することになります。
+それらを手動で同期をとるのは大変なので、 `Cargo.toml` に書いてあるバージョンで Git にもタグをつけるようにしたいです。そこで、CI ではそれらの差分を検知する [composite action](https://docs.github.com/ja/actions/creating-actions/creating-a-composite-action) を用意して、柔軟に使えるようにしています。
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/actions/versions/action.yml#L24-L46
 
+- PR がトリガーの CI では、マージするとバージョンが上がる場合に `release` のラベルを付与する
+
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L37-L52
+
+- master ブランチの CI では、実際にタグを付与する
+
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L56-L75
+
+こうして、 `Cargo.toml` に書くバージョンだけを管理すればよい状態にすることができました。
+
+## リリースドラフト作成
+GitHub でリリースをいい感じに作るとなると、主な選択肢は2つあります。release-drafter と GitHub 公式のリリースノート自動生成機能です。
+https://github.com/release-drafter/release-drafter
+https://docs.github.com/ja/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+release-drafter も機能が豊富でいいですが、今回は公式のものを使うことにしました。公式のものについて機能を簡単に説明すると、↓のような `.github/release.yml` を書いておくことで、リリース作成時に 「Generate Release Notes」ボタンを押すと、 PR のタイトルやラベルをもとにリリースノートを自動生成してくれます。
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/release.yml#L1-L23
+
+いくつかリリースをしていますが、リリースノートはそうやって作成されています。
+https://github.com/hayas1/json-with-comments/releases/tag/v0.1.5
+
+ちなみに、「Generate Release Notes」ボタンを手動で押すために、 master ブランチの CI では、リリースのドラフトだけを作成するようになっています。
+「Generate Release Notes」ボタンを押したときに得られる文字列は、GitHub の API を叩くことで手に入れられるようなのですが、そこにはまだ取り組めていないです。 公式の機能なのでリリースドラフトを用意するのに使っている [actions/create-release](https://github.com/actions/create-release) にやってもらいたいところでもあるものの、もうアーカイブされてしまっているようなので望み薄ですね 😥
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L56-L75
 
 
 # 感想
