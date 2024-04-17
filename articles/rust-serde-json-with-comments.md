@@ -246,6 +246,13 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/maste
 https://hayas1.github.io/json-with-comments/tarpaulin-report
 
 ## READMEの追従漏れチェック
+ドキュメントのために `lib.rs` にクレートの概要や使い方を書くわけですが、これって `README.md` とだいたい同じですよね。というわけで、[cargo-readme](https://github.com/webern/cargo-readme)を使って、[lib.rs](https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/lib.rs) のドキュメントから [README.md](https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md) を自動生成します。
+
+とはいえ、CIにコミットされるのはあまりうれしくないと思っているので、コミット自体は手動で行うことになります。
+そこで、CIでは `cargo readme` を実行して生成される `README.md` に差分が無いかだけを確認しています。
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L34-L35
+
+`README.md` の更新が漏れていると CI がこけて気づくことができるので、個人的にはよい落としどころだったかなと思っています。
 
 ## リリースドラフト作成
 
