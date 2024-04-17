@@ -21,7 +21,6 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md#json-with-com
 (まだ実装できてない機能もいくつかあり、また、互換性を持たせることが目的ではないので細かいインターフェースもところどころ異なります)
 ```toml:Cargo.toml
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
 json-with-comments = { git = "https://github.com/hayas1/json-with-comments", tag = "v0.1.5" }
 ```
 
