@@ -208,7 +208,7 @@ let value = Value::Object(HashMap::from([("key".to_string(), Value::String("valu
 let value = jsonc!({"key": "value", "null": null});
 ```
 
-`jsonc!` マクロは何段階かのマクロから構成されていて、中心部分は↓の `jsonc_generics!` マクロです
+この `jsonc!` マクロは何段階かのマクロから構成されていて、中心部分は↓の `jsonc_generics!` マクロです
 
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value/macros.rs#L62-L81
 Rust の macro (ここでは[宣言的マクロ](https://doc.rust-jp.rs/book-ja/ch19-06-macros.html)のことです) は基本的に引数を解析して `block`, `expr`, `tt` などの[マッチする構造](https://doc.rust-lang.org/reference/macros-by-example.html#metavariables)に応じてコード生成して置き換える、といったことをします。`expr` は式のことで、`tt` はトークンツリーのことです。↑のコードだと、
@@ -284,7 +284,7 @@ https://hayas1.github.io/json-with-comments/tarpaulin-report
 ## READMEの追従漏れチェック
 ドキュメントのために `lib.rs` にクレートの概要や使い方を書くわけですが、これって `README.md` とだいたい同じですよね。というわけで、[cargo-readme](https://github.com/webern/cargo-readme)を使って、[lib.rs](https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/lib.rs) のドキュメントから [README.md](https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md) を自動生成します。
 
-とはいえ、CIにコミットされるのはあまりうれしくないと思っているので、コミット自体は手動で行うことになります。
+とはいえ、上でも少し書いた通り、CIにコミットされるのはあまりうれしくないと思っているので、コミット自体は手動で行うことになります。
 そこで、CIでは `cargo readme` を実行して生成される `README.md` に差分が無いかだけを確認しています。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L34-L35
 
@@ -293,14 +293,17 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullr
 ## タグの付与
 Rust のプログラムを Git 管理すると、`Cargo.toml` に書いているバージョンと、Git でつけるタグのバージョンで、2つのバージョンを管理することになります。
 それらの同期を手動でとるのは大変なので、 `Cargo.toml` に書いてあるバージョンで Git にもタグをつけるようにしたいです。そこで、CI ではそれらの差分を検知する [composite action](https://docs.github.com/ja/actions/creating-actions/creating-a-composite-action) を用意して、柔軟に使えるようにしています。
-https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/actions/versions/action.yml#L24-L46
+https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/actions/versions/action.yml#L1-L46
 
-- たとえば、PR がトリガーの CI では、マージするとバージョンが上がる場合に `release` のラベルを付与しています
+この composite action では、以下などを output として得ることができます
+- `Cargo.toml` に書いてあるバージョン
+- Git でついている最新のタグのバージョン
+- `Cargo.toml` に書いてあるバージョンと Git でついている最新のタグのバージョンが同じかどうか
 
+これを使ってたとえば、PR がトリガーの CI では、マージするとバージョンが上がる場合に `release` のラベルを付与しています
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L37-L52
 
-- また、master ブランチの CI では、`Cargo.toml` のバージョンが 上がった場合に、実際にタグを付与しています
-
+また、master ブランチの CI では、`Cargo.toml` のバージョンが 上がった場合に、実際にタグを付与しています
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/master.yml#L56-L68
 
 こうして、 `Cargo.toml` に書くバージョンだけを管理すればよい状態にすることができました。(実際はこの CI だとバージョンが上がったことは検知できておらず、 `Cargo.toml` と Git でバージョンが違うかどうかだけしか見られていないことは内緒です)
@@ -310,7 +313,7 @@ GitHub でリリースをいい感じに作るとなると、主な選択肢は2
 https://github.com/release-drafter/release-drafter
 https://docs.github.com/ja/repositories/releasing-projects-on-github/automatically-generated-release-notes
 
-release-drafter も機能が豊富でいいですが、今回は公式のものを使うことにしました。公式のものについて機能を簡単に説明すると、↓のような `.github/release.yml` を書いておくと、 PR のタイトルやラベルをもとにリリースノートを自動生成できるようになります。
+release-drafter も機能が豊富でいいですが、今回は公式のものを使うことにしました。公式のものについて機能を簡単に説明すると、↓のような `.github/release.yml` でどのラベルがついたPRをどのリリースに分類するかを書いておき、リリースノートを PR のタイトルをもとに自動生成できるようになります。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/release.yml#L1-L23
 
 リリース作成時に 「Generate Release Notes」ボタンを押すと、自動生成されたリリースノートを埋めてもらえます。
@@ -319,10 +322,10 @@ https://docs.github.com/ja/repositories/releasing-projects-on-github/automatical
 いくつかリリースをしていますが、リリースノートはこうやって自動作成されています。
 https://github.com/hayas1/json-with-comments/releases/tag/v0.1.5
 
-なお、PR にある自動でラベルをつけるために、 [actions/labeler](https://github.com/actions/labeler) を使ってます。↓のような `.github/labeler.yml` を書いておいてワークフローを呼び出すと、PR のブランチ名や、変更のあったパスなどに応じてラベルを付与してくれます。
+なお、PR に自動でラベルをつけるために、 [actions/labeler](https://github.com/actions/labeler) を使ってます。↓のような `.github/labeler.yml` を書いておいてワークフローを呼び出すと、PR のブランチ名や、変更のあったパスなどに応じてラベルを付与してくれます。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/labeler.yml#L1-L39
 
-ワークフローの呼び出しも↓のように簡単にできるので、とても扱いやすいものになっています。
+ワークフローの呼び出しも↓のように簡単にできるので、とても扱いやすいものになっています。最近(？) v5 がリリースされて↑の yaml のインターフェースが変わったりしたみたいです。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/labeler.yml#L1-L12
 
 ちなみに、「Generate Release Notes」ボタンを手動で押すために、 master ブランチの CI では、リリースのドラフトだけを作成するようになっています。
