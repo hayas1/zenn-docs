@@ -16,6 +16,9 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/README.md#json-with-com
 - パフォーマンスのチューニング、ベンチマークテスト
 - commentをパースしてデシリアライズできるようにする(serdeの制限であまり現実的でないかもしれない)
 
+ドキュメントは現在 GitHub Pages で公開しています。
+https://hayas1.github.io/json-with-comments/json_with_comments/
+
 # 使い方
 使い方はおよそ README に書いてある通りですが、 [serde_json](https://github.com/serde-rs/json) とだいたい同じように使えます。
 (まだ実装できてない機能もいくつかあり、また、互換性を持たせることが目的ではないので細かいインターフェースもところどころ異なります)
@@ -60,7 +63,7 @@ assert!(matches!(
 ```
 
 ## `Value` へのデシリアライズ
-JSONC をデシリアライズしたい型が決まってない時は `Value` の型を使うことができます。 `Value` は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 `jsonc!` マクロを使って `Value` を作ることもできます。このあたりも serde_json とだいたい同じです
+JSONC をデシリアライズしたい型が決まってない時は `Value` の型を使うことができます。 `Value` は `[]` を使ってインデックスアクセスができたり、その他いくつか便利なメソッドを持っています。 serde_json の `json!` マクロと同様、と `jsonc!` マクロを使って `Value` を作ることもできます。
 ```rust
 use json_with_comments::{from_str, Value, jsonc};
 
@@ -138,6 +141,9 @@ assert_eq!(serde_json::to_value(jsonc.clone()).unwrap(), json);
 実装は serde_json とかなり近く、serde や serde_json のおさらいみたいにもなりますが、せっかくなので書いていきます。
 
 ## serde の抽象化に従う
+serde では数値型や文字列などの基本の型と、 seq や map といったコレクションの型、 struct や enum といった型の、それぞれに対して Serialize と Deserialize をするメソッドを要求します。この記事で全てのメソッドに触れるわけではないですが、それでも長々と書くことになってしまうぐらいには、とてもたくさんのメソッドを実装していく必要があります。
+逆に言うと、これらさえ実装すれば、 Rust のデータ型を JSON 文字列として書きだしたり、 パースした JSON 文字列を Rust のデータ型に変換したりできます。特定のフィールドを無視したり、スネークケースでなくキャメルケースにしたりといったオプションについても serde が提供してくれます。
+
 ### Deserialize
 serde において Deserialize の登場人物は大きく 3 人です。
 - `Deserialize` トレイト: `Deserializer` トレイトによってデシリアライズできる型のことです。ほぼマーカーみたいなものです。
@@ -169,13 +175,13 @@ https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/ser/access/jsonc.rs
 bool や数値など、入れ子でないデータ型についてはそのまま文字列にすればよいですが、 Object(いわゆる Map) などの入れ子になりうるデータ型については、入れ子部分の処理もする必要があります。`serialize_map` などのメソッドでは、処理を `SerializeMap` に投げています。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/ser/access/jsonc.rs#L172-L174
 
-`SerializeMap` のやることも、 Deserialize の `MapAccess` 同様です。value部分の入れ子をおおもとの `Serializer` に投げたり、key部分には専用の `Serializer` を用意したりします。`:` による key と value の区切り、 `,` による key-value の区切り、 `}` による Object の終わりなどを文字列として書き込んでいきます(↓のコードでは、minify format の JSON と pretty format の JSON どちらにも出力できるための抽象化が入っているのでリテラルとして `:` や `,` や `}` が直接ここのコードに現れてはないですが)。
+`SerializeMap` のやることも、 Deserialize の `MapAccess` 同様です。value 部分の入れ子をおおもとの `Serializer` に投げたり、key部分には専用の `Serializer` を用意したりします。`:` による key と value の区切り、 `,` による key-value の区切り、 `}` による Object の終わりなどを文字列として書き込んでいきます(↓のコードでは、minify format の JSON と pretty format の JSON どちらにも出力できるための抽象化が入っているのでリテラルとして `:` や `,` や `}` が直接ここのコードに現れてはないですが)。
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/ser/access/map.rs#L27-L58
 
 Serialize は Deserialize よりシンプルではありますが、入れ子を処理するためのトレイトが、`SerializeSeq`, `SerializeTuple`, `SerializeTupleStruct`, `SerializeTupleVariant`, `SerializeMap`, `SerializeStruct`, `SerializeStructVariant` の 7 個ほどあったりするので、なんだかんだで Deserialize と同じくらいの量のコードを書くことになります。(`SerializeTuple` の処理は実質 `SerializeSeq` に投げれたりということもあって全部が全部実装を書いていかないといけないわけではない)
 
 ## `Value` の Serialize と Deserialize
-**文字列 ↔ Rust の値** だけでなく、 **`Value` ↔ Rust の値** についても Serialize と Deserialize で抽象化されるため、その実装もあります。はじめに `Value` について書いておくと、これはその実 `Map` や `String` といったJSONの値を表す enum になっています。
+**文字列 ↔ Rust の値** だけでなく、 **`Value` ↔ Rust の値** についても Serialize と Deserialize で抽象化されるため、その実装もあります。この話をするためには、はじめに `Value` について書いておく必要がありますが、これはその実 `Map` や `String` といったJSONの値を表す enum になっています。([ドキュメント](https://hayas1.github.io/json-with-comments/json_with_comments/value/enum.JsoncValue.html))
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/src/value.rs#L63-L100
 
 つまり、パーサーが「今読んでいる文字列」に応じて Rust の値へデシリアライズするのと同様に、`Value` の「今見ている値」に応じて Rust の値へデシリアライズできます。そして、Rust の値を JSON 文字列にシリアライズできるのと同様に、 Rust の値を `Value` へシリアライズできます。
@@ -234,8 +240,14 @@ CIもいくつか作ってるので、これについても書いてみます。
 ## 単体テスト、formatter のチェック、linterのチェック
 https://github.com/hayas1/json-with-comments/blob/v0.1.5/.github/workflows/pullrequest.yml#L28-L32
 `cargo test` とか `cargo fmt --check` とか `cargo clippy` とかをやっているだけではあります。
-自動フォーマットとかは CI ではしておらず、CIがこけるようになっています。 CI に勝手にコミットされるのがうれしくないと思ったためです。
-ローカルで自動フォーマットされるのでこけたことはないです
+
+単体テストは、JSON のシリアライズやデシリアライズといったざっくりした粒度のものが多いですが、テスト通っていれば、まあ JSONC のパーサーとしてはまともに動くだろうといった感じになっています。 Rust のいいところとしてコンパイルさえ通っていれば期待しない動きはほぼしないので、コンパイルできてテストも通っていると安心感がすごいです。
+細かい修正しただけなのに壊れてしまったといった状況をおよそ避けることができるので、安心して手を加えることができるようになって開発の速度も上がり、継続してプログラムの改善に取り組むことができるようになります。
+パーサーは比較的きっちり仕様が決まっているので、テストと特に相性が良いです。逆に、パーサーを書くことでテストの重要性を認識できるという面もあると思ってます。
+
+自動フォーマットとかは CI ではしておらず、CI がこけるだけになっています。特に作業中のブランチだと CI に勝手にコミットされるのがうれしくないと思ったためです。ローカルで自動フォーマットされるのでこけたことはないです
+
+clippy は個人的には正直どっちでもいいかなと思っているのですが、ときどき知らなかった書き方に出会うことができるので、とりあえず入れています。
 
 ## ドキュメント生成
 `master` ブランチの push (PR の merge も含む) をトリガーに `cargo doc --no-deps` して、 GitHub Pages に上げています。最近のスタンダードな2段階構成(？)のやり方です。
