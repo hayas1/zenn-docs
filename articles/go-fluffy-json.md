@@ -10,7 +10,7 @@ published: false
 https://github.com/hayas1/go-fluffy-json
 
 https://pkg.go.dev/github.com/hayas1/go-fluffy-json
-Goで書いてPublicなGitHubに置いておくとほぼ自動でドキュメントを生成してくれるの初めて知りましたがとても便利でした
+Goで書くとPublicなGitHubに置いておくとほぼ自動でドキュメントを生成してくれるの初めて知りましたがとても便利でした。あとGoはGitHubに置いておくだけでimportできるので、この記事に貼ってあるコードは[playground](https://go.dev/play/)にコピペするだけで動かせて、それも便利でした。
 
 # 背景
 GoでJSONをパースするとき、構造体にマッピングして使うことが多いです。
@@ -113,4 +113,34 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 		panic(err)
 	}
 	fmt.Println(world) // Output: world
+```
+
+一応 Visitor パターンも実装しており Unmarshal した JSON を 深さ優先探索したり幅優先探索したりもできます。簡単に使うために、ただノードをその順番で返すイテレータを得る `DepthFirst` や `BreadthFirst` などのメソッドも用意しています。
+```go
+	target := `[[[1,2],[3,4]],[[5,6],[7,8]]]`
+	var value fluffyjson.RootValue
+	if err := json.Unmarshal([]byte(target), &value); err != nil {
+		panic(err)
+	}
+
+	var sum func(v fluffyjson.JsonValue) int
+	sum = func(v fluffyjson.JsonValue) int {
+		switch t := v.(type) {
+		case *fluffyjson.Array:
+			s := 0
+			for _, vv := range *t {
+				s += sum(vv)
+			}
+			return s
+		case *fluffyjson.Number:
+			return int(*t)
+		default:
+			panic("not array or number")
+		}
+	}
+	results := make([]int, 0, 15)
+	for _, v := range value.DepthFirst() {
+		results = append(results, sum(v))
+	}
+	fmt.Println(results) // Output: [36 10 3 1 2 7 3 4 26 11 5 6 15 7 8]
 ```
