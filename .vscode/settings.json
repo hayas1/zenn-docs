@@ -4,6 +4,7 @@
         "serde",
         "struct",
         "TLDR",
+        "Unmarshaler",
         "usize",
         "zenn"
     ]
