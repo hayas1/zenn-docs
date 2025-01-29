@@ -9,6 +9,8 @@ published: false
 # 作ったもの
 https://github.com/hayas1/go-fluffy-json
 
+https://pkg.go.dev/github.com/hayas1/go-fluffy-json
+
 # 背景
 GoでJSONをパースするとき、構造体にマッピングして使うことが多いです。
 ```go
