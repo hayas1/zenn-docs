@@ -78,6 +78,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	}
 ```
 
+## ネストとキャスト
 さて、JSON をゆるふわに扱う以上、ネストされた位置にある要素へのアクセスや、型のキャストが課題になります。そういうときに使うことができるメソッドも用意しています。 `AccessAsString` のようなメソッドでネストされた位置へのアクセスと型へのキャストを同時に解決します。[serde_jsonのValueでも採用](https://docs.rs/serde_json/latest/serde_json/enum.Value.html#method.pointer)されている、[JSON Pointer (RFC6901)](https://tools.ietf.org/html/rfc6901) を採用しています。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
@@ -98,6 +99,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	fmt.Println(world) // Output: world
 ```
 
+## Visitor と DFS/BFS
 工夫ポイントとして、`AccessAsString` のようなメソッドは可変長引数を受け取っており、引数を渡さない場合はJSONのルートの要素を `string` へキャストします。ルートが `object` だったりするとエラーが返ります。可変長引数なので、JSON PointerのParseをせずとも1要素ずつ渡すこともできますが、intやstringをそのままは受け取れず、そのために定義した型でラップする必要はあり、これも改善の余地があるのかもしれないです。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
@@ -144,3 +146,16 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	}
 	fmt.Println(results) // Output: [36 10 3 1 2 7 3 4 26 11 5 6 15 7 8]
 ```
+
+# 実装
+冒頭では Rust の例で serde_json が実装している Value の enum に触れましたが、Go には enum はないので、他の方法を使う必要があります。とはいえコンセプトは単純なよくあるもので、`JsonValue` の interface を、`Object` `Array` `String` `Number` `Bool` `Null` などの struct へ実装していくだけです。 switch typeで `case: int` が コンパイルエラーになっていたのは、int がこの `JsonValue` の interface を実装していないためです。
+Null の Go での値は `struct{}{}` などよりも `nil` で扱いたいですが、`nil` はこういうケースで使える適切な型がなさそうでちょっと困っていたりします。
+https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L13-L33
+
+`JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
+
+## ネストとキャスト
+
+## Visitor と DFS/BFS
+
+# まとめ
