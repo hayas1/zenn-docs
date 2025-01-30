@@ -1,6 +1,6 @@
 ---
 title: "Go: JSON をゆるふわに扱ってみた"
-emoji: "🌟"
+emoji: "🌩️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["go", "json"]
 published: false
@@ -57,7 +57,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	}
 ```
 
-ちなみに Rust では [serde_json のライブラリに実装されている `Value` の enum](https://docs.rs/serde_json/latest/serde_json/enum.Value.html) を使ってゆるふわに JSON をパースできるので、このような困りごとは発生しないです(Goでもこういうのがあったらすみません、把握していませんでした 🙏)。というわけで、Goでこの `Value` ような enum ライクなものを実装してみたい、というのがこの記事で扱う内容です。
+ちなみに Rust では [serde_json のライブラリに実装されている `Value` の enum](https://docs.rs/serde_json/latest/serde_json/enum.Value.html) を使ってゆるふわに JSON をパースできるので、このような困りごとは発生しないです(Goでもこういうのがあったらすみません、把握していませんでした 🙏)。というわけで、Goでこの `Value` のような enum ライクなものを実装してみたい、というのがこの記事で扱う内容です。
 
 # 使い方
 こんな感じで使えるようになりました。[ドキュメント](https://pkg.go.dev/github.com/hayas1/go-fluffy-json#pkg-examples)にもExampleが載っています。無事 `case int:` と書くとコンパイルエラーになることが達成できました。しかし、`encoding/json`の `Unmarshaler` を実装している都合もあり、case に書く部分がポインタになってしまっています。これは改善の余地があるかもしれないです。
@@ -79,7 +79,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 ```
 
 ## ネストとキャスト
-さて、JSON をゆるふわに扱う以上、ネストされた位置にある要素へのアクセスや、型のキャストが課題になります。そういうときに使うことができるメソッドも用意しています。 `AccessAsString` のようなメソッドでネストされた位置へのアクセスと型へのキャストを同時に解決します。[serde_jsonのValueでも採用](https://docs.rs/serde_json/latest/serde_json/enum.Value.html#method.pointer)されている、[JSON Pointer (RFC6901)](https://tools.ietf.org/html/rfc6901) を採用しています。
+さて、JSON をゆるふわに扱う以上、ネストされた位置にある要素へのアクセスや、型のキャストが課題になります。そういうときに使うことができる `AccessAsString` のようなメソッドを用意していて、でネストされた位置へのアクセスと型へのキャストを同時に解決します。[serde_jsonのValueでも採用](https://docs.rs/serde_json/latest/serde_json/enum.Value.html#method.pointer)されている、[JSON Pointer (RFC6901)](https://tools.ietf.org/html/rfc6901) を採用しました。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
 	var value fluffyjson.RootValue
@@ -99,7 +99,6 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	fmt.Println(world) // Output: world
 ```
 
-## Visitor と DFS/BFS
 工夫ポイントとして、`AccessAsString` のようなメソッドは可変長引数を受け取っており、引数を渡さない場合はJSONのルートの要素を `string` へキャストします。ルートが `object` だったりするとエラーが返ります。可変長引数なので、JSON PointerのParseをせずとも1要素ずつ渡すこともできますが、intやstringをそのままは受け取れず、そのために定義した型でラップする必要はあり、これも改善の余地があるのかもしれないです。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
@@ -109,7 +108,11 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	}
 
 	world, err := value.AccessAsString(
-		fluffyjson.KeyAccess("deep"), fluffyjson.KeyAccess("nested"), fluffyjson.KeyAccess("json"), fluffyjson.KeyAccess("value"), fluffyjson.IndexAccess(1),
+		fluffyjson.KeyAccess("deep"),
+		fluffyjson.KeyAccess("nested"),
+		fluffyjson.KeyAccess("json"),
+		fluffyjson.KeyAccess("value"),
+		fluffyjson.IndexAccess(1),
 	)
 	if err != nil {
 		panic(err)
@@ -117,6 +120,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	fmt.Println(world) // Output: world
 ```
 
+## Visitor と DFS/BFS
 一応 Visitor パターンも実装しており Unmarshal した JSON を 深さ優先探索したり幅優先探索したりもできます。簡単に使うために、ただノードをその順番で返すイテレータを得る `DepthFirst` や `BreadthFirst` などのメソッドも用意しています。
 ```go
 	target := `[[[1,2],[3,4]],[[5,6],[7,8]]]`
@@ -152,8 +156,11 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 Null の Go での値は `struct{}{}` などよりも `nil` で扱いたいですが、`nil` はこういうケースで使える適切な型がなさそうでちょっと困っていたりします。
 https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L13-L33
 
-`JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
+`Unmarshaler` を実装しているため `encoding/json` との互換性があり、`json.Unmarshal` で `JsonValue` を得ることができるようになっていますが、その実装はプレフィックスが `'{'` なら `Object` として `Unmarshal` して、 `'['` なら `Array` として `Unmarshal` して、、、 というような感じです。JSON は LL(1) なので、こういうところで楽ができますね。ちなみに leading spaceは `encoding/json` が消してから `Unmarshaler` に処理を渡してくれてそうなので、そこの処理は不要そうでした。
+https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L63-L114
 
-あとはひたすら(多少の工夫はしつつ)、`Object` `Array` `String` `Number` `Bool` `Null` などの各 struct へ実装していくだけです。 最近はCopilotのおかげでそういったコードが書きやすくなりましたね。
+他にも `JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
+あとはひたすら(多少の工夫はしつつ)、`Object` `Array` `String` `Number` `Bool` `Null` などの各 struct へ実装していくだけです。 最近はCopilotのおかげでそういったひたすら実装する系のコードが書きやすくなりましたね。
+https://github.com/hayas1/go-fluffy-json/blob/main/accessor.go#L43-L54
 
 # まとめ
