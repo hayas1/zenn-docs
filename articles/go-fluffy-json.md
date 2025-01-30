@@ -1,5 +1,5 @@
 ---
-title: "Go: JSON をゆるふわに扱ってみた"
+title: "Go: JSON をゆるふわに扱ってみた結果"
 emoji: "🌩️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["go", "json"]
@@ -10,10 +10,10 @@ published: false
 https://github.com/hayas1/go-fluffy-json
 
 https://pkg.go.dev/github.com/hayas1/go-fluffy-json
-Goで書くとPublicなGitHubに置いておくとほぼ自動でドキュメントを生成してくれるの初めて知りましたがとても便利でした。あとGoはGitHubに置いておくだけでimportできるので、この記事に貼ってあるコードは[playground](https://go.dev/play/)にコピペするだけで動かせて、それも便利でした。
+関係ないですが Go で書くと Public な GitHub に置いておくとほぼ自動でドキュメントを生成してくれるの初めて知りましたがとても便利でした。あと Go は GitHub に置いておくだけで import できるので、この記事に貼ってあるコードは [playground](https://go.dev/play/) にコピペするだけで動かせて、それも便利でした。
 
 # 背景
-GoでJSONをパースするとき、構造体にマッピングして使うことが多いです。
+Go で JSON をパースするとき、構造体にマッピングして使うことが多いです。
 ```go
 	type Animal struct {
 		Name  string `json:"name"`
@@ -28,7 +28,7 @@ GoでJSONをパースするとき、構造体にマッピングして使うこ�
 	fmt.Printf("%+v", animal) // Output: {Name:Platypus Order:Monotremata}
 ```
 
-この方法は、プログラムで扱いたいJSONがコンパイル時に決まっている場合は非常に有用であるものの、コンパイル時に決まらない場合は `interface{}` に Unmarshal して、例えば `map[string]interface{}` などの型で処理することになります。
+この方法は、プログラムで扱いたい JSON がコンパイル時に決まっている場合は非常に有用であるものの、コンパイル時に決まらない場合は `interface{}` に Unmarshal して、例えば `map[string]interface{}` などの型で処理することになります。
 ```go
 	target := `{"name": "Platypus", "order": "Monotremata"}`
 	var animal map[string]interface{}
@@ -43,7 +43,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 
 [JSON](https://www.json.org/)である以上、`object` `array` `string` `number` `"true"` `"false"` `"null"` の要素から構成されるということは決まっているわけですが、 `interface{}` ではそれを表現できず、使うときに毎回キャストしたり type switch したりしないといけません。しかし、ここに罠があり、たとえば `interface{}` に Unmarshal された JSON では[数値は全て `float64` になる](https://pkg.go.dev/encoding/json#Unmarshal)ので、`int` に type switch しようとしても、コンパイルは通るのに実行時には `case int:` の部分は実行されません。
 ```go
-    target := `{"number": 16}`
+	target := `{"number": 16}`
 	var number map[string]interface{}
 	err := json.Unmarshal([]byte(target), &number)
 	if err != nil {
@@ -79,7 +79,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 ```
 
 ## ネストとキャスト
-さて、JSON をゆるふわに扱う以上、ネストされた位置にある要素へのアクセスや、型のキャストが課題になります。そういうときに使うことができる `AccessAsString` のようなメソッドを用意していて、でネストされた位置へのアクセスと型へのキャストを同時に解決します。[serde_jsonのValueでも採用](https://docs.rs/serde_json/latest/serde_json/enum.Value.html#method.pointer)されている、[JSON Pointer (RFC6901)](https://tools.ietf.org/html/rfc6901) を採用しました。
+さて、JSON をゆるふわに扱う以上、ネストされた位置にある要素へのアクセスや、型のキャストが課題になります。そういうときに使うことができる `AccessAsString` のようなメソッドを用意していて、ネストされた位置へのアクセスと、型のキャストが同時に解決できます。ネストされた位置へのアクセスのためには、[serde_jsonのValueでも採用](https://docs.rs/serde_json/latest/serde_json/enum.Value.html#method.pointer)されている、[JSON Pointer (RFC6901)](https://tools.ietf.org/html/rfc6901) を採用しました。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
 	var value fluffyjson.RootValue
@@ -99,7 +99,7 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 	fmt.Println(world) // Output: world
 ```
 
-工夫ポイントとして、`AccessAsString` のようなメソッドは可変長引数を受け取っており、引数を渡さない場合はJSONのルートの要素を `string` へキャストします。ルートが `object` だったりするとエラーが返ります。可変長引数なので、JSON PointerのParseをせずとも1要素ずつ渡すこともできますが、intやstringをそのままは受け取れず、そのために定義した型でラップする必要はあり、これも改善の余地があるのかもしれないです。
+工夫ポイントとして、`AccessAsString` のようなメソッドは可変長引数を受け取っており、引数を渡さない場合は別で定義している `AsString` と同じ操作を実現し、JSON のルートの要素を `string` へキャストします。ルートが `string` でなく `object` だったりするとエラーが返ります。可変長引数なので、JSON PointerのParseをせずとも1要素ずつ渡すこともできますが、intやstringをそのままは受け取れず、そのために定義した型でラップする必要があり、これも改善の余地があるのかもしれないです。
 ```go
 	target := `{"deep":{"nested":{"json":{"value":["hello","world"]}}}}`
 	var value fluffyjson.RootValue
@@ -152,11 +152,11 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 ```
 
 # 実装
-冒頭では Rust の例で serde_json が実装している Value の enum に触れましたが、Go には enum はないので、他の方法を使う必要があります。とはいえコンセプトは単純なよくあるもので、`JsonValue` の interface を、`Object` `Array` `String` `Number` `Bool` `Null` などの struct へ実装していくだけです。 switch typeで `case: int` が コンパイルエラーになっていたのは、int がこの `JsonValue` の interface を実装していないためです。
-Null の Go での値は `struct{}{}` などよりも `nil` で扱いたいですが、`nil` はこういうケースで使える適切な型がなさそうでちょっと困っていたりします。
+冒頭では Rust の例で serde_json が実装している `Value` の enum に触れましたが、Go には enum はないので、他の方法を使う必要があります。とはいえコンセプトは単純なよくあるもので、`JsonValue` の interface を、`Object` `Array` `String` `Number` `Bool` `Null` などの struct へ実装していくだけです。 type switch で `case: int` が コンパイルエラーになっていたのは、int がこの `JsonValue` の interface を実装していないためです。
+なお、 `null` の Go での値は `struct{}{}` などよりも `nil` で扱いたいですが、`nil` はこういうケースで使える適切な型がなさそうでちょっと困っていたりします。
 https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L13-L33
 
-`Unmarshaler` を実装しているため `encoding/json` との互換性があり、`json.Unmarshal` で `JsonValue` を得ることができるようになっていますが、その実装はプレフィックスが `'{'` なら `Object` として `Unmarshal` して、 `'['` なら `Array` として `Unmarshal` して、、、 というような感じです。JSON は LL(1) なので、こういうところで楽ができますね。ちなみに leading spaceは `encoding/json` が消してから `Unmarshaler` に処理を渡してくれてそうなので、そこの処理は不要そうでした。
+`Unmarshaler` を実装しているため `encoding/json` との互換性があり、`json.Unmarshal` で `JsonValue` を得ることができるようになっています。その実装はプレフィックスが `'{'` なら `Object` として Unmarshal して、 `'['` なら `Array` として Unmarshal して、、、 というような感じです。JSON は LL(1) なので、こういうところで楽ができますね。ちなみに leading spaceは `encoding/json` が消してから `Unmarshaler` に処理を渡してくれてそうなので、そういった処理は不要そうでよかったです。
 https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L63-L114
 
 他にも `JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
@@ -166,4 +166,4 @@ https://github.com/hayas1/go-fluffy-json/blob/main/accessor.go#L43-L54
 # まとめ
 `encoding/json` 互換にすると `Unmarshaler` の実装のため、扱う型がポインタになってしまったり、`JsonValue` の interface には `json.Unmarshal` できなくて `RootValue` という struct が生まれてしまったり、いくつか微妙な部分がありました。
 
-結局 Go で JSON をゆるふわに扱うときは `interface{}` に `json.Unmarshal` して、int に type switch しないようにプログラマが気を付けるというのが落としどころなのでしょう。
+結局 Go で JSON をゆるふわに扱うときは `interface{}` に `json.Unmarshal` して、int に type switch しないなどはプログラマが気を付けるというのが落としどころかと思いました。コンパイルが通っても実行時エラーの可能性がまあまあ残っているというのはプログラマが型のついた言語を使うモチベーションがどこにあるのかを再考させられるような気もしますが、そういうものなのでしょう。
