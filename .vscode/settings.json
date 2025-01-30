@@ -1,9 +1,12 @@
 {
     "cSpell.words": [
         "clippy",
+        "fluffyjson",
+        "Println",
         "serde",
         "struct",
         "TLDR",
+        "Unmarshal",
         "Unmarshaler",
         "usize",
         "zenn"
