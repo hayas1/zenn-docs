@@ -167,4 +167,4 @@ https://github.com/hayas1/go-fluffy-json/blob/v0.1.0/accessor.go#L43-L54
 # まとめ
 `encoding/json` 互換にすると `Unmarshaler` の実装のため、扱う型がポインタになってしまったり、`JsonValue` の interface には `json.Unmarshal` できなくて `RootValue` という struct が生まれてしまったり、いくらか微妙な結果となりました。
 
-結局 Go で JSON をかっちりゆるふわに扱うのはあまり向いていなそうです。基本 `interface{}` に `json.Unmarshal` して扱って、int に type switch しないなどはプログラマが気を付けるというのが落としどころかもしれません。コンパイルが通っても実行時エラーの可能性がまあまあ残っているというのは近年プログラマが型のついた言語を使うモチベーションがどこにあるのかを再考させられると思いました。
+結局 Go で JSON をかっちりゆるふわに扱うのはあまり向いていなそうです。基本 `interface{}` に `json.Unmarshal` して扱って、int に type switch しないなどはプログラマが気を付けるというのが落としどころかもしれません。コンパイルが通っても実行時エラーの懸念がまあまあ残るというのは近年プログラマが型のついた言語を使うモチベーションがどこにあるのかを再考させられると思いました。
