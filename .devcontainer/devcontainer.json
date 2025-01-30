@@ -24,6 +24,7 @@
                 // "GitHub.copilot",
                 "Codeium.codeium",
                 // "TabNine.tabnine-vscode",
+                "zenn.zenn-preview",
             ]
         }
     },
