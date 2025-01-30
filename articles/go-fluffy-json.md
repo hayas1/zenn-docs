@@ -154,8 +154,6 @@ https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L13-L33
 
 `JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
 
-## ネストとキャスト
-
-## Visitor と DFS/BFS
+あとはひたすら(多少の工夫はしつつ)、`Object` `Array` `String` `Number` `Bool` `Null` などの各 struct へ実装していくだけです。 最近はCopilotのおかげでそういったコードが書きやすくなりましたね。
 
 # まとめ
