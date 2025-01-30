@@ -3,7 +3,7 @@ title: "Go: JSON をかっちりゆるふわに扱いたかった"
 emoji: "🌩️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["go", "json"]
-published: false
+published: true
 ---
 
 # 作ったもの
