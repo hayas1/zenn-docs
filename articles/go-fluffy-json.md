@@ -154,14 +154,14 @@ GoではこのようにしてJSONをかっちり扱ったりゆるふわに扱�
 # 実装
 冒頭では Rust の例で serde_json が実装している `Value` の enum に触れましたが、Go には enum はないので、他の方法を使う必要があります。とはいえコンセプトは単純なよくあるもので、`JsonValue` の interface を、`Object` `Array` `String` `Number` `Bool` `Null` などの struct へ実装していくだけです。 type switch で `case: int` が コンパイルエラーになっていたのは、int がこの `JsonValue` の interface を実装していないためです。
 なお、 `null` の Go での値は `struct{}{}` などよりも `nil` で扱いたいですが、`nil` はこういうケースで使える適切な型がなさそうでちょっと困っていたりします。
-https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L13-L33
+https://github.com/hayas1/go-fluffy-json/blob/v0.1.0/value.go#L13-L33
 
 `Unmarshaler` を実装しているため `encoding/json` との互換性があり、`json.Unmarshal` で `JsonValue` を得ることができるようになっています。その実装はプレフィックスが `'{'` なら `Object` として Unmarshal して、 `'['` なら `Array` として Unmarshal して、、、 というような感じです。JSON は LL(1) なので、こういうところで楽ができますね。ちなみに leading spaceは `encoding/json` が消してから `Unmarshaler` に処理を渡してくれてそうなので、そういった処理は不要そうでよかったです。
-https://github.com/hayas1/go-fluffy-json/blob/main/value.go#L63-L114
+https://github.com/hayas1/go-fluffy-json/blob/v0.1.0/value.go#L63-L114
 
 他にも `JsonValue` の interface は色々なことを求めていますが、 `Access` や `AccessAs` はネストされた位置にある要素へのアクセスや、型のキャストを、`Accept` や `Search` は、Visitor パターンや DFS/BFS を実装する時に使うものです。
 あとはひたすら(多少の工夫はしつつ)、`Object` `Array` `String` `Number` `Bool` `Null` などの各 struct へ実装していくだけです。 最近はCopilotのおかげでそういったひたすら実装する系のコードが書きやすくなりましたね。
-https://github.com/hayas1/go-fluffy-json/blob/main/accessor.go#L43-L54
+https://github.com/hayas1/go-fluffy-json/blob/v0.1.0/accessor.go#L43-L54
 
 # まとめ
 `encoding/json` 互換にすると `Unmarshaler` の実装のため、扱う型がポインタになってしまったり、`JsonValue` の interface には `json.Unmarshal` できなくて `RootValue` という struct が生まれてしまったり、いくらか微妙な結果となりました。
